@@ -21,7 +21,15 @@ final class AudioService: NSObject {
     // MARK: - Recording
 
     func requestMicPermission() async -> Bool {
-        await AVAudioApplication.requestRecordPermission()
+        if #available(iOS 17, *) {
+            return await AVAudioApplication.requestRecordPermission()
+        } else {
+            return await withCheckedContinuation { continuation in
+                AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
     }
 
     func startRecording() -> URL? {

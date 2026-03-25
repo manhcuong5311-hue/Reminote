@@ -10,9 +10,22 @@
 		0D64EAF82F72D167007E0E1B /* Reminote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reminote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0D4CE4592F739966008FB76A /* Exceptions for "Reminote" folder in "Reminote" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0D64EAF72F72D167007E0E1B /* Reminote */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0D64EAFA2F72D167007E0E1B /* Reminote */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0D4CE4592F739966008FB76A /* Exceptions for "Reminote" folder in "Reminote" target */,
+			);
 			path = Reminote;
 			sourceTree = "<group>";
 		};
@@ -251,11 +264,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Reminote/Reminote.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 553U32259K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Reminote/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Future Message uses your camera to record video notes for your future self.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Future Message uses your microphone to record voice and video notes for your future self.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -286,11 +301,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Reminote/Reminote.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 553U32259K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Reminote/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Future Message uses your camera to record video notes for your future self.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Future Message uses your microphone to record voice and video notes for your future self.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

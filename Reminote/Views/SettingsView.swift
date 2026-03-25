@@ -7,11 +7,11 @@ struct SettingsView: View {
     @State private var profile = UserProfileManager.shared
     @State private var theme   = ThemeManager.shared
     @State private var premium = PremiumManager.shared
+    @State private var cloud   = iCloudManager.shared
 
     @State private var showNotifications = false
     @State private var showThemes        = false
     @State private var showFAQ           = false
-    @State private var showPrivacy       = false
     @State private var showTerms         = false
     @State private var showPaywall       = false
     @State private var showBirthDatePicker = false
@@ -33,6 +33,7 @@ struct SettingsView: View {
                     VStack(spacing: 24) {
                         profileSection
                         notificationsSection
+                        iCloudSection
                         themesSection
                         premiumSection
                         supportSection
@@ -58,7 +59,6 @@ struct SettingsView: View {
         .sheet(isPresented: $showNotifications) { NotificationSettingsView() }
         .sheet(isPresented: $showThemes)        { ThemeSelectionView() }
         .sheet(isPresented: $showFAQ)           { FAQView() }
-        .sheet(isPresented: $showPrivacy)       { PrivacyPolicyView() }
         .sheet(isPresented: $showTerms)         { TermsView() }
         .sheet(isPresented: $showPaywall) {
             PaywallView(viewModel: viewModel)
@@ -134,7 +134,7 @@ struct SettingsView: View {
                     DatePicker(
                         "",
                         selection: Binding(
-                            get: { profile.birthDate ?? Calendar.current.date(byAdding: .year, value: -25, to: Date())! },
+                            get: { profile.birthDate ?? Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date() },
                             set: { profile.birthDate = $0 }
                         ),
                         in: ...Date(),
@@ -153,6 +153,86 @@ struct SettingsView: View {
                             Text("Clear birthday")
                                 .font(.system(size: 13))
                                 .foregroundColor(.red.opacity(0.7))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - iCloud Sync
+
+    private var iCloudSection: some View {
+        settingsCard {
+            sectionLabel("ICLOUD SYNC")
+                .padding(.bottom, 14)
+
+            VStack(spacing: 16) {
+                // Toggle row
+                SettingsRow(icon: "arrow.clockwise.icloud.fill",
+                            iconColor: Color(red: 0.3, green: 0.55, blue: 0.95)) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sync across devices")
+                            .font(.system(size: 15))
+                            .foregroundColor(.appText)
+                        Text(cloud.isSyncEnabled ? cloud.syncState.label : "Off")
+                            .font(.system(size: 12))
+                            .foregroundColor(.appSubtext)
+                    }
+                } trailing: {
+                    Toggle("", isOn: Binding(
+                        get: { cloud.isSyncEnabled },
+                        set: { enabled in
+                            if enabled {
+                                Task { await cloud.enableSync(messages: viewModel.messages) }
+                            } else {
+                                cloud.disableSync()
+                            }
+                        }
+                    ))
+                    .labelsHidden()
+                    .tint(.appAccent)
+                }
+
+                // Manual sync button (only when enabled)
+                if cloud.isSyncEnabled {
+                    Divider().background(Color.appBorder)
+
+                    Button {
+                        Haptic.light()
+                        viewModel.syncWithCloud()
+                    } label: {
+                        SettingsRow(icon: "arrow.triangle.2.circlepath",
+                                    iconColor: Color(red: 0.3, green: 0.55, blue: 0.95)) {
+                            Text("Sync now")
+                                .font(.system(size: 15))
+                                .foregroundColor(.appText)
+                        } trailing: {
+                            if cloud.syncState.isSyncing {
+                                ProgressView().tint(.appAccent).scaleEffect(0.75)
+                            } else {
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.appHint)
+                            }
+                        }
+                    }
+                    .disabled(cloud.syncState.isSyncing)
+                }
+
+                // No iCloud account warning
+                if !cloud.isAvailable && cloud.isSyncEnabled {
+                    Divider().background(Color.appBorder)
+                    Link(destination: URL(string: UIApplication.openSettingsURLString)!) {
+                        SettingsRow(icon: "exclamationmark.triangle.fill",
+                                    iconColor: .orange) {
+                            Text("Sign in to iCloud in Settings")
+                                .font(.system(size: 14))
+                                .foregroundColor(.orange)
+                        } trailing: {
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 11))
+                                .foregroundColor(.appHint)
                         }
                     }
                 }
@@ -326,13 +406,13 @@ struct SettingsView: View {
                 .padding(.bottom, 14)
 
             VStack(spacing: 16) {
-                Button { showPrivacy = true } label: {
+                Link(destination: URL(string: "https://manhcuong5311-hue.github.io/Reminote/")!) {
                     SettingsRow(icon: "hand.raised.fill", iconColor: Color(red: 0.5, green: 0.6, blue: 0.8)) {
                         Text("Privacy Policy")
                             .font(.system(size: 15))
                             .foregroundColor(.appText)
                     } trailing: {
-                        Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(.appHint)
+                        Image(systemName: "arrow.up.right").font(.system(size: 11)).foregroundColor(.appHint)
                     }
                 }
 

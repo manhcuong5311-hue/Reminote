@@ -6,7 +6,7 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var premium    = PremiumManager.shared
-    @State private var selectedID = StoreIDs.yearly   // default selection
+    @State private var selectedID = StoreIDs.yearly
     @State private var appeared   = false
 
     private let gold = Color(red: 0.82, green: 0.70, blue: 0.45)
@@ -32,6 +32,7 @@ struct PaywallView: View {
                         planPickerSection
                         ctaSection
                         legalText
+                        legalFooter
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 48)
@@ -42,8 +43,8 @@ struct PaywallView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.easeOut(duration: 0.5)) { appeared = true }
-            // Retry product load if empty (e.g., paywall opened before products arrived)
-            if premium.yearlyProduct == nil && premium.lifetimeProduct == nil {
+            // Retry if either product is missing — use || not && so one missing triggers a reload
+            if premium.yearlyProduct == nil || premium.lifetimeProduct == nil {
                 Task { await premium.loadProducts() }
             }
         }
@@ -66,6 +67,7 @@ struct PaywallView: View {
     }
 
     // MARK: - Hero
+    // "sparkles" exists on every iOS version we target and reads clearly as "premium"
 
     private var heroSection: some View {
         VStack(spacing: 18) {
@@ -73,9 +75,9 @@ struct PaywallView: View {
                 Circle()
                     .fill(gold.opacity(0.12))
                     .frame(width: 90, height: 90)
-                Image(systemName: "envelope.badge.clock.fill")
-                    .font(.system(size: 40, weight: .thin))
-                    .foregroundStyle(gold)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 38, weight: .light))
+                    .foregroundColor(gold)
             }
 
             VStack(spacing: 10) {
@@ -133,49 +135,38 @@ struct PaywallView: View {
     }
 
     // MARK: - Plan picker
+    // Always renders BOTH cards. If StoreKit hasn't loaded yet the card shows a
+    // hardcoded fallback price and is greyed-out; the CTA button stays disabled.
 
     private var planPickerSection: some View {
-        Group {
-            if premium.isLoadingProducts {
-                HStack { Spacer(); ProgressView().tint(gold); Spacer() }
-                    .frame(height: 110)
-            } else if premium.yearlyProduct == nil && premium.lifetimeProduct == nil {
-                VStack(spacing: 8) {
-                    Text("Could not load products.")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.5))
-                    Button("Retry") { Task { await premium.loadProducts() } }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(gold)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 28)
-            } else {
-                HStack(spacing: 12) {
-                    if let yearly = premium.yearlyProduct {
-                        planCard(
-                            id: StoreIDs.yearly,
-                            price: yearly.displayPrice,
-                            period: "/ year",
-                            badge: "Best value",
-                            note: "Renews annually"
-                        )
-                    }
-                    if let lifetime = premium.lifetimeProduct {
-                        planCard(
-                            id: StoreIDs.lifetime,
-                            price: lifetime.displayPrice,
-                            period: "one-time",
-                            badge: "Own forever",
-                            note: "No subscription"
-                        )
-                    }
-                }
-            }
+        HStack(spacing: 12) {
+            planCard(
+                id:            StoreIDs.yearly,
+                price:         premium.yearlyProduct?.displayPrice ?? "$2.99",
+                period:        "/ year",
+                badge:         "Best value",
+                note:          "Renews annually",
+                isLoading:     premium.isLoadingProducts && premium.yearlyProduct == nil
+            )
+            planCard(
+                id:            StoreIDs.lifetime,
+                price:         premium.lifetimeProduct?.displayPrice ?? "$9.99",
+                period:        "one-time",
+                badge:         "Own forever",
+                note:          "No subscription",
+                isLoading:     premium.isLoadingProducts && premium.lifetimeProduct == nil
+            )
         }
     }
 
-    private func planCard(id: String, price: String, period: String, badge: String, note: String) -> some View {
+    private func planCard(
+        id: String,
+        price: String,
+        period: String,
+        badge: String,
+        note: String,
+        isLoading: Bool
+    ) -> some View {
         let isSelected = selectedID == id
         return Button {
             Haptic.light()
@@ -187,12 +178,16 @@ struct PaywallView: View {
                     .foregroundColor(.black)
                     .tracking(0.8)
                     .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(gold)
+                    .background(gold.opacity(isLoading ? 0.4 : 1))
                     .clipShape(Capsule())
 
-                Text(price)
-                    .font(.serif(26))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.55))
+                if isLoading {
+                    ProgressView().tint(gold).frame(height: 32)
+                } else {
+                    Text(price)
+                        .font(.serif(26))
+                        .foregroundColor(isSelected ? .white : .white.opacity(0.55))
+                }
 
                 Text(period)
                     .font(.system(size: 13))
@@ -200,7 +195,7 @@ struct PaywallView: View {
 
                 Text(note)
                     .font(.system(size: 10))
-                    .foregroundColor(gold.opacity(isSelected ? 1 : 0.5))
+                    .foregroundColor(gold.opacity(isLoading ? 0.3 : (isSelected ? 1 : 0.5)))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
@@ -221,7 +216,6 @@ struct PaywallView: View {
 
     private var ctaSection: some View {
         VStack(spacing: 14) {
-            // Error message
             if let err = premium.purchaseError {
                 Text(err)
                     .font(.system(size: 12))
@@ -249,24 +243,14 @@ struct PaywallView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(gold)
+                .background(selectedProduct != nil ? gold : gold.opacity(0.45))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             .disabled(premium.isPurchasing || selectedProduct == nil)
-
-            Button {
-                Haptic.light()
-                Task { _ = await premium.restore() }
-            } label: {
-                Text("Restore purchase")
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.35))
-            }
-            .disabled(premium.isPurchasing)
         }
     }
 
-    // MARK: - Legal
+    // MARK: - Legal text (subscription disclaimer)
 
     private var legalText: some View {
         Text(selectedID == StoreIDs.yearly
@@ -277,6 +261,33 @@ struct PaywallView: View {
             .multilineTextAlignment(.center)
     }
 
+    // MARK: - Legal footer (restore + links)
+
+    private var legalFooter: some View {
+        VStack(spacing: 12) {
+            Button {
+                Haptic.light()
+                Task { _ = await premium.restore() }
+            } label: {
+                Text("Restore Purchase")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.45))
+            }
+            .disabled(premium.isPurchasing)
+
+            HStack(spacing: 16) {
+                Link("Privacy Policy",
+                     destination: URL(string: "https://manhcuong5311-hue.github.io/Reminote/")!)
+                Text("·").foregroundColor(.white.opacity(0.2))
+                Link("Terms of Use (EULA)",
+                     destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+            }
+            .font(.system(size: 11))
+            .foregroundColor(.white.opacity(0.28))
+        }
+        .padding(.top, 4)
+    }
+
     // MARK: - Helpers
 
     private var selectedProduct: Product? {
@@ -285,11 +296,9 @@ struct PaywallView: View {
 
     private var ctaLabel: String {
         if selectedID == StoreIDs.yearly {
-            if let p = premium.yearlyProduct { return "Start Premium — \(p.displayPrice)/yr" }
-            return "Start Yearly Premium"
+            return premium.yearlyProduct.map { "Start Premium — \($0.displayPrice)/yr" } ?? "Start Yearly Premium"
         } else {
-            if let p = premium.lifetimeProduct { return "Get Lifetime — \(p.displayPrice)" }
-            return "Get Lifetime Access"
+            return premium.lifetimeProduct.map { "Get Lifetime — \($0.displayPrice)" } ?? "Get Lifetime Access"
         }
     }
 }

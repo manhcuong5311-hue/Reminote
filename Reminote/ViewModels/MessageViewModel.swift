@@ -62,19 +62,41 @@ final class MessageViewModel {
         NotificationManager.shared.scheduleUnlock(for: message)
         NotificationManager.shared.cancelReengagement()
         Task { await NotificationManager.shared.requestPermission() }
+        Task {
+            let synced = await iCloudManager.shared.upload(message)
+            if let idx = messages.firstIndex(where: { $0.id == synced.id }) {
+                messages[idx] = synced
+                persist()
+            }
+        }
     }
 
     func openMessage(_ message: Message) -> Message? {
         guard let idx = messages.firstIndex(where: { $0.id == message.id }) else { return nil }
         messages[idx].isOpened = true
         persist()
+        let opened = messages[idx]
+        Task {
+            let synced = await iCloudManager.shared.upload(opened)
+            if let i = messages.firstIndex(where: { $0.id == synced.id }) {
+                messages[i] = synced; persist()
+            }
+        }
         return messages[idx]
     }
 
     func saveReflection(for message: Message, note: String) {
         guard let idx = messages.firstIndex(where: { $0.id == message.id }) else { return }
         messages[idx].reflectNote = note
+        messages[idx].cloudSyncedAt = nil   // mark dirty for next sync
         persist()
+        let updated = messages[idx]
+        Task {
+            let synced = await iCloudManager.shared.upload(updated)
+            if let i = messages.firstIndex(where: { $0.id == synced.id }) {
+                messages[i] = synced; persist()
+            }
+        }
     }
 
     func deleteMessage(_ message: Message) {
@@ -84,6 +106,7 @@ final class MessageViewModel {
         messages.removeAll { $0.id == message.id }
         persist()
         if messages.isEmpty { NotificationManager.shared.scheduleReengagement() }
+        Task { await iCloudManager.shared.delete(id: message.id) }
     }
 
     func completeOnboarding() {
@@ -99,6 +122,22 @@ final class MessageViewModel {
         messages.append(message)
         persist()
         NotificationManager.shared.scheduleUnlock(for: message)
+    }
+
+    // MARK: - Cloud merge (called by ContentView when iCloudManager has remote data)
+
+    func mergeFromCloud(_ remote: [Message]) {
+        messages = remote
+        persist()
+    }
+
+    // MARK: - Full cloud sync (called on launch + from Settings)
+
+    func syncWithCloud() {
+        Task {
+            let merged = await iCloudManager.shared.syncAll(messages: messages)
+            await MainActor.run { messages = merged }
+        }
     }
 
     // MARK: - Persistence

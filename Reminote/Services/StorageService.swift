@@ -7,7 +7,8 @@ final class StorageService {
     private let documentsURL: URL
 
     private init() {
-        documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
     }
 
     // MARK: - Messages

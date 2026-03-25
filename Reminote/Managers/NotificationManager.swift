@@ -186,6 +186,34 @@ final class NotificationManager {
             .removePendingNotificationRequests(withIdentifiers: ["reengagement"])
     }
 
+    // MARK: - Birthday
+
+    func scheduleBirthday(name: String, date: Date) {
+        cancelBirthday()
+
+        let content = UNMutableNotificationContent()
+        content.title = "Happy Birthday\(name.isEmpty ? "!" : ", \(name)!")"
+        content.body = "Your future self sent you a wish — may this year bring everything you hoped for."
+        content.sound = .default
+        if #available(iOS 15, *) { content.interruptionLevel = .active }
+
+        let cal = Calendar.current
+        var comps = DateComponents()
+        comps.month  = cal.component(.month, from: date)
+        comps.day    = cal.component(.day,   from: date)
+        comps.hour   = notificationHour
+        comps.minute = 0
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: true)
+        let req = UNNotificationRequest(identifier: "birthday", content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(req)
+    }
+
+    func cancelBirthday() {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["birthday"])
+    }
+
     // MARK: - Persistence
 
     private func persist() {

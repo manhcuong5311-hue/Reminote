@@ -328,7 +328,7 @@ struct MessageDetailView: View {
         Task.detached(priority: .userInitiated) {
             do {
                 let items: [Any]
-                let msg = await displayMessage
+                let msg = await MainActor.run { displayMessage }
 
                 switch kind {
                 case .text:

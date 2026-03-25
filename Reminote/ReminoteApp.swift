@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import CloudKit
 
 @main
 struct ReminoteApp: App {
@@ -23,10 +24,49 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) -> Bool {
         let center = UNUserNotificationCenter.current()
         center.delegate = self
+
         // Register notification categories with action buttons
         NotificationManager.registerCategories()
+
+        // Register for remote notifications (needed for CloudKit silent pushes)
+        // Requires "Background Modes → Remote notifications" capability in Xcode
+        application.registerForRemoteNotifications()
+
         return true
     }
+
+    // MARK: - Remote notifications (CloudKit subscription pushes)
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        // Check if this is a CloudKit database notification
+        guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo),
+              notification.notificationType == .database else {
+            completionHandler(.noData)
+            return
+        }
+
+        // Fetch changes triggered by another device
+        Task {
+            await iCloudManager.shared.handleRemoteNotification()
+            completionHandler(.newData)
+        }
+    }
+
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // CloudKit handles its own registration; no extra work needed here
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        // Silent fail — CloudKit subscriptions will still work via foreground polling
+    }
+
+    // MARK: - UNUserNotificationCenterDelegate
 
     // Show banners + play sound even when app is in the foreground
     func userNotificationCenter(
@@ -45,7 +85,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) {
         let userInfo = response.notification.request.content.userInfo
 
-        // Both a direct tap and the OPEN_MESSAGE action should open the message
         if response.actionIdentifier == UNNotificationDefaultActionIdentifier ||
            response.actionIdentifier == "OPEN_MESSAGE" {
             if let idString = userInfo["messageId"] as? String,

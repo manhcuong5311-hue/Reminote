@@ -11,6 +11,9 @@ struct Message: Codable, Identifiable, Equatable {
     var videoFileName: String?
     var reflectNote: String?
 
+    // Tracks last successful CloudKit sync. nil = needs upload.
+    var cloudSyncedAt: Date? = nil
+
     // MARK: - Computed
 
     var isUnlocked: Bool { Date() >= unlockDate }

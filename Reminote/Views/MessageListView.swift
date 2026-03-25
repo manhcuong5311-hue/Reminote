@@ -11,6 +11,7 @@ struct MessageListView: View {
     @State private var profile   = UserProfileManager.shared
     @State private var premium   = PremiumManager.shared
     @State private var deepLink  = DeepLinkManager.shared
+    @State private var cloud     = iCloudManager.shared
 
     var body: some View {
         NavigationStack {
@@ -122,6 +123,11 @@ struct MessageListView: View {
                         Text("\(MessageViewModel.freeMessageLimit - viewModel.activeCount) free slot\(MessageViewModel.freeMessageLimit - viewModel.activeCount == 1 ? "" : "s") left")
                             .font(.system(size: 13))
                             .foregroundColor(.appHint)
+                    }
+
+                    if cloud.isSyncEnabled {
+                        SyncDotView(state: cloud.syncState)
+                            .transition(.opacity)
                     }
                 }
             }

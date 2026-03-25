@@ -13,8 +13,10 @@ final class UserProfileManager {
         didSet {
             if let d = birthDate {
                 UserDefaults.standard.set(d.timeIntervalSince1970, forKey: "profile_birthdate")
+                NotificationManager.shared.scheduleBirthday(name: userName, date: d)
             } else {
                 UserDefaults.standard.removeObject(forKey: "profile_birthdate")
+                NotificationManager.shared.cancelBirthday()
             }
         }
     }
