@@ -1,0 +1,77 @@
+{
+  "identifier" : "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+  "nonConsumableProducts" : [
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "1000000001",
+      "localizations" : [
+        {
+          "description" : "One-time purchase for lifetime access to all Future Message premium features. No subscription required.",
+          "displayName" : "Lifetime Access",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.reminote.premium.lifetime",
+      "referenceName" : "Lifetime Access",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_developerMode" : true,
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "F1E2D3C4-B5A6-7890-FEDC-BA9876543210",
+      "localizations" : [
+        {
+          "locale" : "en_US",
+          "name" : "Premium"
+        }
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOfferCodeRedemption" : false,
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "1000000002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Full access to all Future Message premium features — unlimited messages, voice notes, video notes, and premium themes.",
+              "displayName" : "Yearly Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.reminote.premium.yearly",
+          "referenceName" : "Yearly Premium",
+          "subscriptionPeriod" : "P1Y",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}
